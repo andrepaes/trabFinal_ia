@@ -3,10 +3,11 @@ import sys
 import numpy as np
 
 gmaps = []
-lista_keys = open("google_keys.txt")
+lista_keys = open("aux_keys.txt")
 keys = lista_keys.read().splitlines()
 lista_keys.close()
 quantidade_total_keys = len(keys)
+print quantidade_total_keys
 for key in keys:
     gmaps.append(googlemaps.Client(key))
 
@@ -20,15 +21,14 @@ else:
     nome_cidade = raw_input("Digite o nome da cidade:")
     tamanho_matriz_x = int(sys.argv[1])
     tamanho_matriz_y = int(sys.argv[2])
-    fator_x = float(sys.argv[1])/100000
-    fator_y = float(sys.argv[2])/100000
+    fator_x = float(sys.argv[1])/1000000
+    fator_y = float(sys.argv[2])/1000000
     tamanho_total = tamanho_matriz_x * tamanho_matriz_y
     print tamanho_total
     quantidade_suportada = float(quantidade_total_keys * 2000)
     ratio_coordenadas = round(tamanho_total / quantidade_suportada)
     if(ratio_coordenadas == 0):
         ratio_coordenadas = 1
-    ratio_coordenadas=10
     print ratio_coordenadas
 
 
@@ -40,10 +40,12 @@ if(len(geocode_result) == 0):
 
 lat = geocode_result[0]["geometry"]["location"]["lat"]
 lng = geocode_result[0]["geometry"]["location"]["lng"]
-
+print "original:"
+print lat,lng
 nome_arquivo = "" + nome_cidade + ".mat"
 recuo_lat = lat + abs(fator_x * (tamanho_matriz_x / 2))
 recuo_lng = lng - abs(fator_y * (tamanho_matriz_y / 2))
+print recuo_lat,recuo_lng
 aux_lng = recuo_lng
 arquivo = open(nome_arquivo,"w")
 cabecalho = "c " + str(tamanho_matriz_x) + " " + str(tamanho_matriz_y) + "\n"
@@ -52,7 +54,7 @@ arquivo.close()
 matriz_gerada = []
 linha = []
 contador_keys = 0
-key_number = 1
+key_number = 0
 quantidade_ciclos = 0
 alturas = []
 i = 0
@@ -72,6 +74,7 @@ while(i < tamanho_matriz_x):
                 altura = gmaps[key_number].elevation((recuo_lat, recuo_lng))
                 print "antes"
                 alturas[i].append(altura[0]["elevation"])
+                print altura[0]["elevation"]
                 print i,j
                 print "depois"
             except googlemaps.exceptions.Timeout:
@@ -79,7 +82,9 @@ while(i < tamanho_matriz_x):
                 key_number += 1
                 if(key_number >= quantidade_total_keys):
                     print "Quantidade de chaves insuficiente"
-                    sys.exit()
+                    print "reiniciando"
+                    key_number = 0
+                    # sys.exit()
 
                 continue
         else:
@@ -150,5 +155,5 @@ matriz_convertida = np.array(matriz_gerada)
 matrix = np.matrix(matriz_convertida)
 with open(nome_arquivo,'a') as f:
     for line in matrix:
-        np.savetxt(f, line, fmt='%.2f')
+        np.savetxt(f, line, fmt='%.0f')
 
